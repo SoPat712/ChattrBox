@@ -1,0 +1,24 @@
+{
+  "originHash" : "fa6a8fb04fb73aba47ec0ff573bd4c4970d1a2e93a66b9450202c56771ca1bab",
+  "pins" : [
+    {
+      "identity" : "down",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/johnxnguyen/Down",
+      "state" : {
+        "branch" : "master",
+        "revision" : "e754ab1c80920dd51a8e08290c912ac1c2ac8b58"
+      }
+    },
+    {
+      "identity" : "mathjaxswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/colinc86/MathJaxSwift",
+      "state" : {
+        "branch" : "main",
+        "revision" : "e23d6eab941da699ac4a60fb0e60f3ba5c937459"
+      }
+    }
+  ],
+  "version" : 3
+}
