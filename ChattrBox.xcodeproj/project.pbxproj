@@ -1,0 +1,558 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		F3E7CEEC2E57587800A99E5F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F3E7CED52E57587600A99E5F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F3E7CEDC2E57587600A99E5F;
+			remoteInfo = ChattrBox;
+		};
+		F3E7CEF62E57587800A99E5F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F3E7CED52E57587600A99E5F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F3E7CEDC2E57587600A99E5F;
+			remoteInfo = ChattrBox;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		F3E7CEDD2E57587600A99E5F /* ChattrBox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChattrBox.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F3E7CEEB2E57587800A99E5F /* ChattrBoxTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChattrBoxTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F3E7CEF52E57587800A99E5F /* ChattrBoxUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChattrBoxUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		F3E7CEDF2E57587600A99E5F /* ChattrBox */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ChattrBox;
+			sourceTree = "<group>";
+		};
+		F3E7CEEE2E57587800A99E5F /* ChattrBoxTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ChattrBoxTests;
+			sourceTree = "<group>";
+		};
+		F3E7CEF82E57587800A99E5F /* ChattrBoxUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ChattrBoxUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F3E7CEDA2E57587600A99E5F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F3E7CEE82E57587800A99E5F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F3E7CEF22E57587800A99E5F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		F3E7CED42E57587600A99E5F = {
+			isa = PBXGroup;
+			children = (
+				F3E7CEDF2E57587600A99E5F /* ChattrBox */,
+				F3E7CEEE2E57587800A99E5F /* ChattrBoxTests */,
+				F3E7CEF82E57587800A99E5F /* ChattrBoxUITests */,
+				F3E7CEDE2E57587600A99E5F /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F3E7CEDE2E57587600A99E5F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F3E7CEDD2E57587600A99E5F /* ChattrBox.app */,
+				F3E7CEEB2E57587800A99E5F /* ChattrBoxTests.xctest */,
+				F3E7CEF52E57587800A99E5F /* ChattrBoxUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F3E7CEDC2E57587600A99E5F /* ChattrBox */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F3E7CEFF2E57587800A99E5F /* Build configuration list for PBXNativeTarget "ChattrBox" */;
+			buildPhases = (
+				F3E7CED92E57587600A99E5F /* Sources */,
+				F3E7CEDA2E57587600A99E5F /* Frameworks */,
+				F3E7CEDB2E57587600A99E5F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F3E7CEDF2E57587600A99E5F /* ChattrBox */,
+			);
+			name = ChattrBox;
+			packageProductDependencies = (
+			);
+			productName = ChattrBox;
+			productReference = F3E7CEDD2E57587600A99E5F /* ChattrBox.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F3E7CEEA2E57587800A99E5F /* ChattrBoxTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F3E7CF022E57587800A99E5F /* Build configuration list for PBXNativeTarget "ChattrBoxTests" */;
+			buildPhases = (
+				F3E7CEE72E57587800A99E5F /* Sources */,
+				F3E7CEE82E57587800A99E5F /* Frameworks */,
+				F3E7CEE92E57587800A99E5F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F3E7CEED2E57587800A99E5F /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				F3E7CEEE2E57587800A99E5F /* ChattrBoxTests */,
+			);
+			name = ChattrBoxTests;
+			packageProductDependencies = (
+			);
+			productName = ChattrBoxTests;
+			productReference = F3E7CEEB2E57587800A99E5F /* ChattrBoxTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		F3E7CEF42E57587800A99E5F /* ChattrBoxUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F3E7CF052E57587800A99E5F /* Build configuration list for PBXNativeTarget "ChattrBoxUITests" */;
+			buildPhases = (
+				F3E7CEF12E57587800A99E5F /* Sources */,
+				F3E7CEF22E57587800A99E5F /* Frameworks */,
+				F3E7CEF32E57587800A99E5F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F3E7CEF72E57587800A99E5F /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				F3E7CEF82E57587800A99E5F /* ChattrBoxUITests */,
+			);
+			name = ChattrBoxUITests;
+			packageProductDependencies = (
+			);
+			productName = ChattrBoxUITests;
+			productReference = F3E7CEF52E57587800A99E5F /* ChattrBoxUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F3E7CED52E57587600A99E5F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					F3E7CEDC2E57587600A99E5F = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					F3E7CEEA2E57587800A99E5F = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = F3E7CEDC2E57587600A99E5F;
+					};
+					F3E7CEF42E57587800A99E5F = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = F3E7CEDC2E57587600A99E5F;
+					};
+				};
+			};
+			buildConfigurationList = F3E7CED82E57587600A99E5F /* Build configuration list for PBXProject "ChattrBox" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = F3E7CED42E57587600A99E5F;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F3E7CEDE2E57587600A99E5F /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F3E7CEDC2E57587600A99E5F /* ChattrBox */,
+				F3E7CEEA2E57587800A99E5F /* ChattrBoxTests */,
+				F3E7CEF42E57587800A99E5F /* ChattrBoxUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F3E7CEDB2E57587600A99E5F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F3E7CEE92E57587800A99E5F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F3E7CEF32E57587800A99E5F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F3E7CED92E57587600A99E5F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F3E7CEE72E57587800A99E5F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F3E7CEF12E57587800A99E5F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F3E7CEED2E57587800A99E5F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F3E7CEDC2E57587600A99E5F /* ChattrBox */;
+			targetProxy = F3E7CEEC2E57587800A99E5F /* PBXContainerItemProxy */;
+		};
+		F3E7CEF72E57587800A99E5F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F3E7CEDC2E57587600A99E5F /* ChattrBox */;
+			targetProxy = F3E7CEF62E57587800A99E5F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		F3E7CEFD2E57587800A99E5F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = CSNM446KVY;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		F3E7CEFE2E57587800A99E5F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = CSNM446KVY;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		F3E7CF002E57587800A99E5F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ChattrBox/ChattrBox.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CSNM446KVY;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ChattrBox/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = joshpatra.ChattrBox;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		F3E7CF012E57587800A99E5F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ChattrBox/ChattrBox.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CSNM446KVY;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ChattrBox/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = joshpatra.ChattrBox;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		F3E7CF032E57587800A99E5F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CSNM446KVY;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = joshpatra.ChattrBoxTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ChattrBox.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ChattrBox";
+			};
+			name = Debug;
+		};
+		F3E7CF042E57587800A99E5F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CSNM446KVY;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = joshpatra.ChattrBoxTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ChattrBox.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ChattrBox";
+			};
+			name = Release;
+		};
+		F3E7CF062E57587800A99E5F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CSNM446KVY;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = joshpatra.ChattrBoxUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = ChattrBox;
+			};
+			name = Debug;
+		};
+		F3E7CF072E57587800A99E5F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CSNM446KVY;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = joshpatra.ChattrBoxUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = ChattrBox;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F3E7CED82E57587600A99E5F /* Build configuration list for PBXProject "ChattrBox" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F3E7CEFD2E57587800A99E5F /* Debug */,
+				F3E7CEFE2E57587800A99E5F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F3E7CEFF2E57587800A99E5F /* Build configuration list for PBXNativeTarget "ChattrBox" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F3E7CF002E57587800A99E5F /* Debug */,
+				F3E7CF012E57587800A99E5F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F3E7CF022E57587800A99E5F /* Build configuration list for PBXNativeTarget "ChattrBoxTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F3E7CF032E57587800A99E5F /* Debug */,
+				F3E7CF042E57587800A99E5F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F3E7CF052E57587800A99E5F /* Build configuration list for PBXNativeTarget "ChattrBoxUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F3E7CF062E57587800A99E5F /* Debug */,
+				F3E7CF072E57587800A99E5F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F3E7CED52E57587600A99E5F /* Project object */;
+}
