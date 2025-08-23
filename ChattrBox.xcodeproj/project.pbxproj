@@ -7,8 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F3A94CA22E57C7CD00528BB8 /* Down in Frameworks */ = {isa = PBXBuildFile; productRef = F3A94CA12E57C7CD00528BB8 /* Down */; };
-		F3A94CA52E57C7F200528BB8 /* MathJaxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F3A94CA42E57C7F200528BB8 /* MathJaxSwift */; };
+		F31E79482E58C10900170F8D /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = F31E79472E58C10900170F8D /* Markdown */; };
+		F31E794B2E58F8FD00170F8D /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = F31E794A2E58F8FD00170F8D /* HotKey */; };
+		F370902D2E59912C00D52929 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = F370902C2E59912C00D52929 /* KeyboardShortcuts */; };
+		F37090302E59913D00D52929 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = F370902F2E59913D00D52929 /* LaunchAtLogin */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,16 +55,6 @@
 			path = ChattrBox;
 			sourceTree = "<group>";
 		};
-		F3E7CEEE2E57587800A99E5F /* ChattrBoxTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = ChattrBoxTests;
-			sourceTree = "<group>";
-		};
-		F3E7CEF82E57587800A99E5F /* ChattrBoxUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = ChattrBoxUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,8 +62,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F3A94CA52E57C7F200528BB8 /* MathJaxSwift in Frameworks */,
-				F3A94CA22E57C7CD00528BB8 /* Down in Frameworks */,
+				F31E794B2E58F8FD00170F8D /* HotKey in Frameworks */,
+				F31E79482E58C10900170F8D /* Markdown in Frameworks */,
+				F37090302E59913D00D52929 /* LaunchAtLogin in Frameworks */,
+				F370902D2E59912C00D52929 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -92,13 +86,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0C616389DBD573C6A00F19E4 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Pods;
-			sourceTree = "<group>";
-		};
 		F3A94C842E57A2DE00528BB8 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -110,10 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				F3E7CEDF2E57587600A99E5F /* ChattrBox */,
-				F3E7CEEE2E57587800A99E5F /* ChattrBoxTests */,
-				F3E7CEF82E57587800A99E5F /* ChattrBoxUITests */,
 				F3E7CEDE2E57587600A99E5F /* Products */,
-				0C616389DBD573C6A00F19E4 /* Pods */,
 				F3A94C842E57A2DE00528BB8 /* Frameworks */,
 			);
 			sourceTree = "<group>";
@@ -148,8 +132,10 @@
 			);
 			name = ChattrBox;
 			packageProductDependencies = (
-				F3A94CA12E57C7CD00528BB8 /* Down */,
-				F3A94CA42E57C7F200528BB8 /* MathJaxSwift */,
+				F31E79472E58C10900170F8D /* Markdown */,
+				F31E794A2E58F8FD00170F8D /* HotKey */,
+				F370902C2E59912C00D52929 /* KeyboardShortcuts */,
+				F370902F2E59913D00D52929 /* LaunchAtLogin */,
 			);
 			productName = ChattrBox;
 			productReference = F3E7CEDD2E57587600A99E5F /* ChattrBox.app */;
@@ -168,9 +154,6 @@
 			dependencies = (
 				F3E7CEED2E57587800A99E5F /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				F3E7CEEE2E57587800A99E5F /* ChattrBoxTests */,
-			);
 			name = ChattrBoxTests;
 			productName = ChattrBoxTests;
 			productReference = F3E7CEEB2E57587800A99E5F /* ChattrBoxTests.xctest */;
@@ -188,9 +171,6 @@
 			);
 			dependencies = (
 				F3E7CEF72E57587800A99E5F /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				F3E7CEF82E57587800A99E5F /* ChattrBoxUITests */,
 			);
 			name = ChattrBoxUITests;
 			productName = ChattrBoxUITests;
@@ -230,8 +210,10 @@
 			mainGroup = F3E7CED42E57587600A99E5F;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				F3A94CA02E57C7CD00528BB8 /* XCRemoteSwiftPackageReference "Down" */,
-				F3A94CA32E57C7EA00528BB8 /* XCRemoteSwiftPackageReference "MathJaxSwift" */,
+				F31E79462E58C10900170F8D /* XCRemoteSwiftPackageReference "swift-markdown" */,
+				F31E79492E58F8FD00170F8D /* XCRemoteSwiftPackageReference "HotKey" */,
+				F370902B2E59912C00D52929 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+				F370902E2E59913D00D52929 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F3E7CEDE2E57587600A99E5F /* Products */;
@@ -601,17 +583,33 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		F3A94CA02E57C7CD00528BB8 /* XCRemoteSwiftPackageReference "Down" */ = {
+		F31E79462E58C10900170F8D /* XCRemoteSwiftPackageReference "swift-markdown" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/johnxnguyen/Down";
+			repositoryURL = "https://github.com/swiftlang/swift-markdown";
 			requirement = {
-				branch = master;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.6.0;
 			};
 		};
-		F3A94CA32E57C7EA00528BB8 /* XCRemoteSwiftPackageReference "MathJaxSwift" */ = {
+		F31E79492E58F8FD00170F8D /* XCRemoteSwiftPackageReference "HotKey" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/colinc86/MathJaxSwift";
+			repositoryURL = "https://github.com/soffes/HotKey";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.2.0;
+			};
+		};
+		F370902B2E59912C00D52929 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.3.0;
+			};
+		};
+		F370902E2E59913D00D52929 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Modern";
 			requirement = {
 				branch = main;
 				kind = branch;
@@ -620,15 +618,25 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		F3A94CA12E57C7CD00528BB8 /* Down */ = {
+		F31E79472E58C10900170F8D /* Markdown */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F3A94CA02E57C7CD00528BB8 /* XCRemoteSwiftPackageReference "Down" */;
-			productName = Down;
+			package = F31E79462E58C10900170F8D /* XCRemoteSwiftPackageReference "swift-markdown" */;
+			productName = Markdown;
 		};
-		F3A94CA42E57C7F200528BB8 /* MathJaxSwift */ = {
+		F31E794A2E58F8FD00170F8D /* HotKey */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F3A94CA32E57C7EA00528BB8 /* XCRemoteSwiftPackageReference "MathJaxSwift" */;
-			productName = MathJaxSwift;
+			package = F31E79492E58F8FD00170F8D /* XCRemoteSwiftPackageReference "HotKey" */;
+			productName = HotKey;
+		};
+		F370902C2E59912C00D52929 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F370902B2E59912C00D52929 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+		F370902F2E59913D00D52929 /* LaunchAtLogin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F370902E2E59913D00D52929 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
+			productName = LaunchAtLogin;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

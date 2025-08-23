@@ -25,6 +25,8 @@ enum ConnectionStatus {
 
 @MainActor
 class ChatManager: ObservableObject {
+    static let shared = ChatManager()
+    
     @Published var messages: [ChatMessage] = []
     @Published var isLoading = false
     @Published var isStreaming = false
@@ -66,7 +68,7 @@ class ChatManager: ObservableObject {
         let aiMessageId = UUID()
         let aiMessage = ChatMessage(id: aiMessageId, content: "", isUser: false)
         messages.append(aiMessage)
-        print("Added AI message, total messages: \(messages.count)")
+        print("Added AI message with ID: \(aiMessageId), total messages: \(messages.count)")
         
         currentTask = Task {
             var streamingContent = ""
@@ -74,17 +76,24 @@ class ChatManager: ObservableObject {
             do {
                 try await streamLMStudio(messages: Array(messages.dropLast())) { chunk in
                     Task { @MainActor in
+                        print("🔄 Processing chunk: '\(chunk)' (length: \(chunk.count))")
                         streamingContent += chunk
-                        print("Received chunk: \(chunk), total: \(streamingContent)")
+                        print("📝 Updated streaming content: '\(streamingContent)' (length: \(streamingContent.count))")
                         
                         // Update the message with streaming content
                         if let lastIndex = self.messages.firstIndex(where: { $0.id == aiMessageId }) {
-                            self.messages[lastIndex] = ChatMessage(
-                                id: aiMessageId,
-                                content: streamingContent,
-                                isUser: false
-                            )
-                            print("Updated AI message, content length: \(streamingContent.count)")
+                            // Update the existing message's content instead of creating a new one
+                            self.messages[lastIndex].content = streamingContent
+                            // Ensure the versions array is properly updated
+                            if self.messages[lastIndex].versions.isEmpty {
+                                self.messages[lastIndex].versions = [streamingContent]
+                            } else {
+                                self.messages[lastIndex].versions[0] = streamingContent
+                            }
+                            // Set the current version to show the streaming content
+                            self.messages[lastIndex].currentVersionIndex = 0
+                            print("✅ Updated AI message, content length: \(streamingContent.count)")
+                            print("🔍 Message content preview: '\(String(streamingContent.prefix(100)))...'")
                         }
                     }
                 }
@@ -102,6 +111,8 @@ class ChatManager: ObservableObject {
             }
             
             await MainActor.run {
+                print("🏁 Streaming completed. Final content length: \(streamingContent.count)")
+                print("🏁 Final content: '\(streamingContent)'")
                 isLoading = false
                 isStreaming = false
             }
@@ -120,6 +131,64 @@ class ChatManager: ObservableObject {
     
     func refreshModels() async {
         await loadAvailableModels()
+    }
+    
+    func regenerateResponse(for messageId: UUID) async {
+        // Find the AI message to regenerate
+        guard let messageIndex = messages.firstIndex(where: { $0.id == messageId && !$0.isUser }) else { return }
+        
+        // Start regeneration
+        isLoading = true
+        isStreaming = true
+        
+        currentTask = Task {
+            var streamingContent = ""
+            
+            do {
+                // Get all messages before the AI response we're regenerating
+                let contextMessages = Array(messages[0..<messageIndex])
+                
+                try await streamLMStudio(messages: contextMessages) { chunk in
+                    Task { @MainActor in
+                        streamingContent += chunk
+                        
+                        // Update the existing message with streaming content
+                        self.messages[messageIndex].content = streamingContent
+                        // Ensure the versions array is properly updated
+                        if self.messages[messageIndex].versions.isEmpty {
+                            self.messages[messageIndex].versions = [streamingContent]
+                        } else {
+                            self.messages[messageIndex].versions[0] = streamingContent
+                        }
+                        // Set the current version to show the streaming content
+                        self.messages[messageIndex].currentVersionIndex = 0
+                    }
+                }
+                
+                // After streaming completes, finalize the new version
+                await MainActor.run {
+                    if !streamingContent.isEmpty {
+                        self.messages[messageIndex].addVersion(streamingContent)
+                    }
+                }
+                
+            } catch {
+                await MainActor.run {
+                    // Add error as a new version
+                    self.messages[messageIndex].addVersion("Error: \(error.localizedDescription)")
+                }
+            }
+            
+            await MainActor.run {
+                isLoading = false
+                isStreaming = false
+            }
+        }
+    }
+    
+    func navigateToVersion(messageId: UUID, versionIndex: Int) {
+        guard let messageIndex = messages.firstIndex(where: { $0.id == messageId }) else { return }
+        messages[messageIndex].setVersion(index: versionIndex)
     }
     
     private func loadAvailableModels() async {
@@ -252,6 +321,9 @@ class ChatManager: ObservableObject {
             stream: true
         )
         
+        print("Streaming request body: \(requestBody)")
+        print("Stream parameter: \(requestBody.stream)")
+        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -260,6 +332,7 @@ class ChatManager: ObservableObject {
         // Set timeout for streaming requests too
         request.timeoutInterval = 30.0 // 30 second timeout for streaming
         
+        print("Sending streaming request to: \(url)")
         let (asyncBytes, response) = try await URLSession.shared.bytes(for: request)
         
         if let httpResponse = response as? HTTPURLResponse,
@@ -268,32 +341,53 @@ class ChatManager: ObservableObject {
         }
         
         // Process streaming response
+        print("Starting to process streaming response...")
         for try await line in asyncBytes.lines {
             if Task.isCancelled {
+                print("Task was cancelled, stopping streaming")
                 break
             }
             
+            print("Received line: \(line)")
+            
             if line.hasPrefix("data: ") {
                 let jsonString = String(line.dropFirst(6)).trimmingCharacters(in: .whitespacesAndNewlines)
+                print("Processing JSON string: \(jsonString)")
                 
                 if jsonString == "[DONE]" {
+                    print("Streaming completed with [DONE]")
                     break
                 }
                 
                 if !jsonString.isEmpty, let data = jsonString.data(using: .utf8) {
                     do {
                         let streamResponse = try JSONDecoder().decode(StreamingChatCompletionResponse.self, from: data)
-                        if let content = streamResponse.choices.first?.delta.content, !content.isEmpty {
+                        print("Decoded streaming response: \(streamResponse)")
+                        if let content = streamResponse.choices.first?.delta.actualContent {
+                            print("Content in chunk: '\(content)' (length: \(content.count))")
+                            // Call onChunk even if content is empty, as empty chunks are normal in streaming
                             onChunk(content)
+                        } else {
+                            print("No content field in chunk")
+                        }
+                        
+                        // Debug: Check if this is a finish reason chunk
+                        if let finishReason = streamResponse.choices.first?.finish_reason {
+                            print("🛑 Stream finished with reason: \(finishReason)")
                         }
                     } catch {
                         // Skip malformed JSON chunks
                         print("Failed to decode streaming chunk: \(error)")
                         continue
                     }
+                } else {
+                    print("Empty JSON string or failed to convert to data")
                 }
+            } else {
+                print("Line doesn't start with 'data: ': \(line)")
             }
         }
+        print("Finished processing streaming response")
     }
 }
 
@@ -301,15 +395,19 @@ class ChatManager: ObservableObject {
 
 struct ChatMessage: Identifiable {
     let id: UUID
-    let content: String
+    var content: String
     let isUser: Bool
     let timestamp: Date
+    var versions: [String] // For AI responses, store multiple versions
+    var currentVersionIndex: Int // Which version is currently displayed
     
     init(content: String, isUser: Bool) {
         self.id = UUID()
         self.content = content
         self.isUser = isUser
         self.timestamp = Date()
+        self.versions = [content]
+        self.currentVersionIndex = 0
     }
     
     init(id: UUID, content: String, isUser: Bool) {
@@ -317,6 +415,32 @@ struct ChatMessage: Identifiable {
         self.content = content
         self.isUser = isUser
         self.timestamp = Date()
+        self.versions = [content]
+        self.currentVersionIndex = 0
+    }
+    
+    // Get the currently displayed content
+    var displayContent: String {
+        guard currentVersionIndex < versions.count else { return content }
+        return versions[currentVersionIndex]
+    }
+    
+    // Get total number of versions
+    var versionCount: Int {
+        return versions.count
+    }
+    
+    // Add a new version (for regenerations)
+    mutating func addVersion(_ newContent: String) {
+        versions.append(newContent)
+        currentVersionIndex = versions.count - 1 // Switch to newest version
+    }
+    
+    // Navigate to a specific version
+    mutating func setVersion(index: Int) {
+        if index >= 0 && index < versions.count {
+            currentVersionIndex = index
+        }
     }
 }
 
@@ -367,10 +491,16 @@ struct StreamingChatCompletionResponse: Codable {
 
 struct StreamingChoice: Codable {
     let delta: Delta
+    let finish_reason: String?
 }
 
 struct Delta: Codable {
     let content: String?
+    let reasoning_content: String?
+    
+    var actualContent: String? {
+        return content ?? reasoning_content
+    }
 }
 
 enum ChatError: LocalizedError {
