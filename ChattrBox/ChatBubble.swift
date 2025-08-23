@@ -92,30 +92,31 @@ struct SimpleChatBubble: View {
                             )
                             .foregroundColor(textColor)
                     } else {
-                        // AI messages - markdown and LaTeX rendering with proper background
+                        // AI messages - hybrid rendering: stable rendered content + raw streaming
                         VStack(spacing: 0) {
-                            HStack(alignment: .top, spacing: 0) {
-                                // Main content - let it size naturally
-                                MarkdownMathRenderer(
-                                    content: message.displayContent.isEmpty ? " " : message.displayContent,
+                            if showCursor {
+                                // Streaming mode: show rendered content above + raw streaming below
+                                StreamingContentView(
+                                    content: message.displayContent,
                                     fontSize: fontSize,
-                                    isStreaming: showCursor
+                                    textColor: textColor,
+                                    cursorVisible: cursorVisible
                                 )
-                                .fixedSize(horizontal: false, vertical: true)
-                                
-                                // Cursor positioned after content
-                                if showCursor && !message.displayContent.isEmpty {
-                                    Rectangle()
-                                        .fill(textColor)
-                                        .frame(width: 2, height: fontSize)
-                                        .opacity(cursorVisible ? 1.0 : 0.0)
-                                        .allowsHitTesting(false)
-                                        .padding(.leading, 4)
-                                        .padding(.top, 2)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                            } else {
+                                // Static mode: show fully rendered content
+                                HStack(alignment: .top, spacing: 0) {
+                                    MarkdownMathRenderer(
+                                        content: message.displayContent.isEmpty ? " " : message.displayContent,
+                                        fontSize: fontSize,
+                                        isStreaming: false
+                                    )
+                                    .allowsHitTesting(false)
                                 }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
                         }
                         .background(
                             RoundedRectangle(cornerRadius: 18)
@@ -265,5 +266,100 @@ struct SimpleChatBubble: View {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(message.displayContent, forType: .string)
+    }
+}
+
+// MARK: - Streaming Content View
+struct StreamingContentView: View {
+    let content: String
+    let fontSize: Double
+    let textColor: Color
+    let cursorVisible: Bool
+    
+    @State private var stableContent: String = ""
+    @State private var streamingContent: String = ""
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Rendered stable content (everything up to the last complete sentence/paragraph)
+            if !stableContent.isEmpty {
+                MarkdownMathRenderer(
+                    content: stableContent,
+                    fontSize: fontSize,
+                    isStreaming: false
+                )
+                .allowsHitTesting(false)
+            }
+            
+            // Raw streaming content (the incomplete part being typed)
+            if !streamingContent.isEmpty {
+                HStack(alignment: .top, spacing: 0) {
+                    Text(streamingContent)
+                        .font(.system(size: fontSize))
+                        .foregroundColor(textColor)
+                        .textSelection(.enabled)
+                        .multilineTextAlignment(.leading)
+                    
+                    // Cursor after streaming content
+                    Rectangle()
+                        .fill(textColor)
+                        .frame(width: 2, height: fontSize)
+                        .opacity(cursorVisible ? 1.0 : 0.0)
+                        .allowsHitTesting(false)
+                        .padding(.leading, 4)
+                        .padding(.top, 2)
+                }
+            }
+        }
+        .onChange(of: content) { _, newValue in
+            updateContentSplit(newValue)
+        }
+        .onAppear {
+            updateContentSplit(content)
+        }
+    }
+    
+    private func updateContentSplit(_ fullContent: String) {
+        // Split content into stable (complete) and streaming (incomplete) parts
+        let lines = fullContent.components(separatedBy: .newlines)
+        
+        // Find the last complete paragraph/sentence
+        var stableLines: [String] = []
+        var streamingLines: [String] = []
+        
+        for (index, line) in lines.enumerated() {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            
+            // Consider a line "complete" if it ends with punctuation or is followed by an empty line
+            let isComplete = trimmed.hasSuffix(".") || trimmed.hasSuffix("!") || trimmed.hasSuffix("?") || 
+                            trimmed.hasSuffix(":") || trimmed.isEmpty ||
+                            (index < lines.count - 1 && lines[index + 1].trimmingCharacters(in: .whitespaces).isEmpty)
+            
+            if isComplete && index < lines.count - 2 {
+                // This line is complete and not one of the last two lines
+                stableLines.append(line)
+            } else {
+                // This line and everything after is still streaming
+                streamingLines = Array(lines[index...])
+                break
+            }
+        }
+        
+        stableContent = stableLines.joined(separator: "\n")
+        streamingContent = streamingLines.joined(separator: "\n")
+        
+        // If everything looks incomplete, show last few complete sentences as stable
+        if stableContent.isEmpty && fullContent.count > 100 {
+            let sentences = fullContent.components(separatedBy: CharacterSet(charactersIn: ".!?"))
+            if sentences.count > 2 {
+                let stableSentences = sentences.dropLast(2)
+                stableContent = stableSentences.joined(separator: ". ") + "."
+                streamingContent = sentences.suffix(2).joined(separator: ". ")
+            } else {
+                streamingContent = fullContent
+            }
+        } else if stableContent.isEmpty {
+            streamingContent = fullContent
+        }
     }
 }

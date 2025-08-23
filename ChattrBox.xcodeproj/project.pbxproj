@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		F31E79482E58C10900170F8D /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = F31E79472E58C10900170F8D /* Markdown */; };
-		F31E794B2E58F8FD00170F8D /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = F31E794A2E58F8FD00170F8D /* HotKey */; };
 		F370902D2E59912C00D52929 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = F370902C2E59912C00D52929 /* KeyboardShortcuts */; };
 		F37090302E59913D00D52929 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = F370902F2E59913D00D52929 /* LaunchAtLogin */; };
 /* End PBXBuildFile section */
@@ -62,7 +61,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F31E794B2E58F8FD00170F8D /* HotKey in Frameworks */,
 				F31E79482E58C10900170F8D /* Markdown in Frameworks */,
 				F37090302E59913D00D52929 /* LaunchAtLogin in Frameworks */,
 				F370902D2E59912C00D52929 /* KeyboardShortcuts in Frameworks */,
@@ -133,7 +131,6 @@
 			name = ChattrBox;
 			packageProductDependencies = (
 				F31E79472E58C10900170F8D /* Markdown */,
-				F31E794A2E58F8FD00170F8D /* HotKey */,
 				F370902C2E59912C00D52929 /* KeyboardShortcuts */,
 				F370902F2E59913D00D52929 /* LaunchAtLogin */,
 			);
@@ -211,7 +208,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				F31E79462E58C10900170F8D /* XCRemoteSwiftPackageReference "swift-markdown" */,
-				F31E79492E58F8FD00170F8D /* XCRemoteSwiftPackageReference "HotKey" */,
 				F370902B2E59912C00D52929 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 				F370902E2E59913D00D52929 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
 			);
@@ -591,14 +587,6 @@
 				minimumVersion = 0.6.0;
 			};
 		};
-		F31E79492E58F8FD00170F8D /* XCRemoteSwiftPackageReference "HotKey" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/soffes/HotKey";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.2.0;
-			};
-		};
 		F370902B2E59912C00D52929 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
@@ -622,11 +610,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F31E79462E58C10900170F8D /* XCRemoteSwiftPackageReference "swift-markdown" */;
 			productName = Markdown;
-		};
-		F31E794A2E58F8FD00170F8D /* HotKey */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F31E79492E58F8FD00170F8D /* XCRemoteSwiftPackageReference "HotKey" */;
-			productName = HotKey;
 		};
 		F370902C2E59912C00D52929 /* KeyboardShortcuts */ = {
 			isa = XCSwiftPackageProductDependency;

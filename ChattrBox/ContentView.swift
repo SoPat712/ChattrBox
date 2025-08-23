@@ -326,38 +326,32 @@ struct ContentView: View {
     
     private var inputView: some View {
         HStack(spacing: 12) {
-            // Text input field
-            TextField("Ask me anything...", text: $messageText, axis: .vertical)
-                .textFieldStyle(.plain)
-                .font(.system(size: fontSize))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                    .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.primary.opacity(0.05))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(colorScheme == .dark ? Color.white.opacity(0.15) : Color.black.opacity(0.2), lineWidth: 0.5)
-                        )
-                )
-                .focused($isTextFieldFocused)
-                .onSubmit {
-                    sendMessage()
-                }
-                .onKeyPress(.return) {
+            // Text input field with dynamic sizing like iMessage
+            DynamicTextEditor(
+                text: $messageText,
+                placeholder: "Ask me anything...",
+                fontSize: fontSize
+            )
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.primary.opacity(0.05))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(colorScheme == .dark ? Color.white.opacity(0.15) : Color.black.opacity(0.2), lineWidth: 0.5)
+                    )
+            )
+            .onKeyPress(.return) {
+                if NSEvent.modifierFlags.contains(.shift) {
+                    // Shift+Enter: let TextEditor handle newline
+                    return .ignored
+                } else {
+                    // Enter: send message
                     sendMessage()
                     return .handled
                 }
-                .onAppear {
-                    // Ensure the text field can receive keyboard shortcuts
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        isTextFieldFocused = true
-                    }
-                }
-                .onTapGesture {
-                    // Ensure focus when tapping the text field
-                    isTextFieldFocused = true
-                }
+            }
 
             
             // Send/Stop button
@@ -490,6 +484,70 @@ struct ContentView: View {
         }
         
         return nil
+    }
+}
+
+// MARK: - Dynamic Text Editor (like iMessage)
+struct DynamicTextEditor: View {
+    @Binding var text: String
+    let placeholder: String
+    let fontSize: Double
+    @FocusState private var isTextFieldFocused: Bool
+    @Environment(\.colorScheme) var colorScheme
+    
+    private var lineHeight: CGFloat {
+        fontSize * 1.2 // Standard line height multiplier
+    }
+    
+    private var numberOfLines: Int {
+        if text.isEmpty {
+            return 1
+        }
+        return max(1, text.components(separatedBy: .newlines).count)
+    }
+    
+    private var dynamicHeight: CGFloat {
+        let lines = min(numberOfLines, 4) // Cap at 4 lines like iMessage
+        return CGFloat(lines) * lineHeight
+    }
+    
+    var body: some View {
+        TextEditor(text: $text)
+            .font(.system(size: fontSize))
+            .scrollContentBackground(.hidden)
+            .background(
+                // Placeholder as background overlay
+                Group {
+                    if text.isEmpty {
+                        HStack {
+                            Text(placeholder)
+                                .font(.system(size: fontSize))
+                                .foregroundColor(.secondary)
+                                .allowsHitTesting(false)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 8)
+                    }
+                }
+            )
+            .focused($isTextFieldFocused)
+            .frame(height: dynamicHeight)
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    isTextFieldFocused = true
+                }
+            }
+            .onTapGesture {
+                isTextFieldFocused = true
+            }
+    }
+}
+
+struct ViewHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 

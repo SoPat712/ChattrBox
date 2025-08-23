@@ -71,29 +71,28 @@ class ChatManager: ObservableObject {
         print("Added AI message with ID: \(aiMessageId), total messages: \(messages.count)")
         
         currentTask = Task {
-            var streamingContent = ""
-            
             do {
                 try await streamLMStudio(messages: Array(messages.dropLast())) { chunk in
                     Task { @MainActor in
                         print("🔄 Processing chunk: '\(chunk)' (length: \(chunk.count))")
-                        streamingContent += chunk
-                        print("📝 Updated streaming content: '\(streamingContent)' (length: \(streamingContent.count))")
                         
-                        // Update the message with streaming content
+                        // Update the message with streaming content directly
                         if let lastIndex = self.messages.firstIndex(where: { $0.id == aiMessageId }) {
-                            // Update the existing message's content instead of creating a new one
-                            self.messages[lastIndex].content = streamingContent
+                            // Append chunk to existing content
+                            let currentContent = self.messages[lastIndex].content
+                            let newContent = currentContent + chunk
+                            
+                            self.messages[lastIndex].content = newContent
                             // Ensure the versions array is properly updated
                             if self.messages[lastIndex].versions.isEmpty {
-                                self.messages[lastIndex].versions = [streamingContent]
+                                self.messages[lastIndex].versions = [newContent]
                             } else {
-                                self.messages[lastIndex].versions[0] = streamingContent
+                                self.messages[lastIndex].versions[0] = newContent
                             }
                             // Set the current version to show the streaming content
                             self.messages[lastIndex].currentVersionIndex = 0
-                            print("✅ Updated AI message, content length: \(streamingContent.count)")
-                            print("🔍 Message content preview: '\(String(streamingContent.prefix(100)))...'")
+                            print("✅ Updated AI message, content length: \(newContent.count)")
+                            print("🔍 Message content preview: '\(String(newContent.prefix(100)))...'")
                         }
                     }
                 }
@@ -111,8 +110,12 @@ class ChatManager: ObservableObject {
             }
             
             await MainActor.run {
-                print("🏁 Streaming completed. Final content length: \(streamingContent.count)")
-                print("🏁 Final content: '\(streamingContent)'")
+                // Get final content from the actual message
+                if let lastIndex = self.messages.firstIndex(where: { $0.id == aiMessageId }) {
+                    let finalContent = self.messages[lastIndex].content
+                    print("🏁 Streaming completed. Final content length: \(finalContent.count)")
+                    print("🏁 Final content: '\(finalContent)'")
+                }
                 isLoading = false
                 isStreaming = false
             }
@@ -148,27 +151,20 @@ class ChatManager: ObservableObject {
                 // Get all messages before the AI response we're regenerating
                 let contextMessages = Array(messages[0..<messageIndex])
                 
+                // Add a new version for the regenerated response
+                await MainActor.run {
+                    self.messages[messageIndex].addVersion("")
+                }
+                
                 try await streamLMStudio(messages: contextMessages) { chunk in
                     Task { @MainActor in
                         streamingContent += chunk
                         
-                        // Update the existing message with streaming content
+                        // Update the newest version with streaming content
+                        let newVersionIndex = self.messages[messageIndex].versions.count - 1
+                        self.messages[messageIndex].versions[newVersionIndex] = streamingContent
+                        self.messages[messageIndex].currentVersionIndex = newVersionIndex
                         self.messages[messageIndex].content = streamingContent
-                        // Ensure the versions array is properly updated
-                        if self.messages[messageIndex].versions.isEmpty {
-                            self.messages[messageIndex].versions = [streamingContent]
-                        } else {
-                            self.messages[messageIndex].versions[0] = streamingContent
-                        }
-                        // Set the current version to show the streaming content
-                        self.messages[messageIndex].currentVersionIndex = 0
-                    }
-                }
-                
-                // After streaming completes, finalize the new version
-                await MainActor.run {
-                    if !streamingContent.isEmpty {
-                        self.messages[messageIndex].addVersion(streamingContent)
                     }
                 }
                 
@@ -342,51 +338,65 @@ class ChatManager: ObservableObject {
         
         // Process streaming response
         print("Starting to process streaming response...")
+        var totalChunks = 0
+        var totalContentLength = 0
+        
         for try await line in asyncBytes.lines {
             if Task.isCancelled {
                 print("Task was cancelled, stopping streaming")
                 break
             }
             
-            print("Received line: \(line)")
+            print("📥 Received line [\(totalChunks)]: '\(line)'")
             
             if line.hasPrefix("data: ") {
                 let jsonString = String(line.dropFirst(6)).trimmingCharacters(in: .whitespacesAndNewlines)
-                print("Processing JSON string: \(jsonString)")
+                print("🔍 Processing JSON string [\(totalChunks)]: '\(jsonString)'")
                 
                 if jsonString == "[DONE]" {
-                    print("Streaming completed with [DONE]")
+                    print("✅ Streaming completed with [DONE] after \(totalChunks) chunks, total content: \(totalContentLength) chars")
                     break
                 }
                 
                 if !jsonString.isEmpty, let data = jsonString.data(using: .utf8) {
                     do {
                         let streamResponse = try JSONDecoder().decode(StreamingChatCompletionResponse.self, from: data)
-                        print("Decoded streaming response: \(streamResponse)")
-                        if let content = streamResponse.choices.first?.delta.actualContent {
-                            print("Content in chunk: '\(content)' (length: \(content.count))")
-                            // Call onChunk even if content is empty, as empty chunks are normal in streaming
-                            onChunk(content)
+                        print("✅ Decoded streaming response [\(totalChunks)]: choices=\(streamResponse.choices.count)")
+                        
+                        if let choice = streamResponse.choices.first {
+                            print("🔍 Choice delta: content='\(choice.delta.content ?? "nil")', reasoning_content='\(choice.delta.reasoning_content ?? "nil")', finish_reason='\(choice.finish_reason ?? "nil")'")
+                            
+                            if let content = choice.delta.actualContent {
+                                totalContentLength += content.count
+                                print("📝 Content in chunk [\(totalChunks)]: '\(content)' (length: \(content.count), total so far: \(totalContentLength))")
+                                onChunk(content)
+                            } else {
+                                print("⚠️ No content field in chunk [\(totalChunks)]")
+                            }
+                            
+                            // Debug: Check if this is a finish reason chunk
+                            if let finishReason = choice.finish_reason {
+                                print("🛑 Stream finished with reason: \(finishReason) after \(totalChunks) chunks")
+                            }
                         } else {
-                            print("No content field in chunk")
+                            print("⚠️ No choices in streaming response [\(totalChunks)]")
                         }
                         
-                        // Debug: Check if this is a finish reason chunk
-                        if let finishReason = streamResponse.choices.first?.finish_reason {
-                            print("🛑 Stream finished with reason: \(finishReason)")
-                        }
+                        totalChunks += 1
                     } catch {
                         // Skip malformed JSON chunks
-                        print("Failed to decode streaming chunk: \(error)")
+                        print("❌ Failed to decode streaming chunk [\(totalChunks)]: \(error)")
+                        print("❌ Raw JSON: '\(jsonString)'")
                         continue
                     }
                 } else {
-                    print("Empty JSON string or failed to convert to data")
+                    print("⚠️ Empty JSON string or failed to convert to data [\(totalChunks)]")
                 }
-            } else {
-                print("Line doesn't start with 'data: ': \(line)")
+            } else if !line.isEmpty {
+                print("⚠️ Line doesn't start with 'data: ' [\(totalChunks)]: '\(line)'")
             }
         }
+        print("🏁 Finished processing streaming response. Total chunks: \(totalChunks), Total content: \(totalContentLength) chars")
         print("Finished processing streaming response")
     }
 }

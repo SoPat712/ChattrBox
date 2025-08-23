@@ -21,17 +21,28 @@ struct MarkdownMathRenderer: View {
 
 // Custom WebView that reports its content height
 class DynamicHeightWebView: WKWebView {
-    var contentHeight: CGFloat = 20 {
-        didSet {
-            if contentHeight != oldValue {
-                invalidateIntrinsicContentSize()
-                superview?.needsLayout = true
+    private var _contentHeight: CGFloat = 20
+    private var isUpdatingHeight = false
+    
+    var contentHeight: CGFloat {
+        get { _contentHeight }
+        set {
+            let newHeight = max(20, newValue)
+            if abs(newHeight - _contentHeight) > 1 && !isUpdatingHeight {
+                isUpdatingHeight = true
+                _contentHeight = newHeight
+                
+                DispatchQueue.main.async {
+                    self.invalidateIntrinsicContentSize()
+                    self.superview?.needsLayout = true
+                    self.isUpdatingHeight = false
+                }
             }
         }
     }
     
     override var intrinsicContentSize: NSSize {
-        return NSSize(width: NSView.noIntrinsicMetric, height: contentHeight)
+        return NSSize(width: NSView.noIntrinsicMetric, height: _contentHeight)
     }
 }
 
@@ -54,11 +65,12 @@ struct WebViewRenderer: NSViewRepresentable {
         // Make background transparent
         webView.setValue(false, forKey: "drawsBackground")
         
-        // Disable scrolling - we want the WebView to expand to fit content
+        // Configure scrolling behavior
         webView.enclosingScrollView?.hasVerticalScroller = false
-        webView.enclosingScrollView?.hasHorizontalScroller = false
+        webView.enclosingScrollView?.hasHorizontalScroller = true
         webView.enclosingScrollView?.verticalScrollElasticity = .none
-        webView.enclosingScrollView?.horizontalScrollElasticity = .none
+        webView.enclosingScrollView?.horizontalScrollElasticity = .allowed
+        webView.enclosingScrollView?.autohidesScrollers = true
         
         // Set up the coordinator with a reference to the webView
         context.coordinator.webView = webView
@@ -67,9 +79,25 @@ struct WebViewRenderer: NSViewRepresentable {
     }
     
     func updateNSView(_ webView: DynamicHeightWebView, context: Context) {
-        let htmlContent = generateHTML()
-        print("🔄 Loading HTML content: \(content.count) chars -> \(htmlContent.count) HTML chars")
-        webView.loadHTMLString(htmlContent, baseURL: nil)
+        // Check if we need to update (avoid unnecessary reloads)
+        if context.coordinator.lastContent != content {
+            print("🔄 Content changed: \(content.count) chars")
+            
+            let htmlContent = generateHTML()
+            print("🔄 Loading HTML content: \(content.count) chars -> \(htmlContent.count) HTML chars")
+            
+            // Safe HTML loading with fallback
+            if htmlContent.isEmpty {
+                print("⚠️ Empty HTML content, using fallback")
+                webView.loadHTMLString("<p>Content loading...</p>", baseURL: nil)
+            } else {
+                webView.loadHTMLString(htmlContent, baseURL: nil)
+            }
+            
+            context.coordinator.lastContent = content
+        } else {
+            print("🔄 Content unchanged, skipping reload")
+        }
         
         // Update coordinator reference
         context.coordinator.webView = webView
@@ -114,7 +142,7 @@ struct WebViewRenderer: NSViewRepresentable {
             background: transparent;
             word-wrap: break-word;
             overflow-wrap: break-word;
-            overflow-y: hidden;
+            overflow-y: visible;
             overflow-x: auto;
             height: auto;
             min-height: auto;
@@ -255,6 +283,9 @@ struct WebViewRenderer: NSViewRepresentable {
             margin: 16px 0;
             text-align: center;
             overflow-x: auto;
+            overflow-y: visible;
+            height: auto;
+            min-height: auto;
         }
         
         /* Emphasis */
@@ -396,7 +427,9 @@ struct WebViewRenderer: NSViewRepresentable {
                     renderMathInElement(document.body, {
                         delimiters: [
                             {left: '$$', right: '$$', display: true},
-                            {left: '$', right: '$', display: false}
+                            {left: '$', right: '$', display: false},
+                            {left: '\\\\(', right: '\\\\)', display: false},
+                            {left: '\\\\[', right: '\\\\]', display: true}
                         ],
                         throwOnError: false
                     });
@@ -418,47 +451,93 @@ struct WebViewRenderer: NSViewRepresentable {
     }
     
     private func convertMarkdownToHTML(_ markdown: String) -> String {
-        print("🔄 Converting markdown with enhanced processing: \(markdown.count) characters")
-        print("📝 Raw input: '\(markdown)'")
+        print("🔄 Converting markdown: \(markdown.count) characters")
+        if markdown.count < 50 {
+            print("🔄 Short content debug: '\(markdown)'")
+        }
         
-        // Use the enhanced markdown processing directly since swift-markdown's HTML API is complex
-        let html = enhancedMarkdownProcessing(markdown)
-        print("📄 Generated HTML: '\(html)'")
-        return html
+        do {
+            // Use the enhanced markdown processing with error handling
+            let html = try enhancedMarkdownProcessing(markdown)
+            print("📄 Generated HTML: \(html.count) characters")
+            return html
+        } catch {
+            print("❌ Markdown processing error: \(error)")
+            // Fallback to safe HTML
+            let safeContent = markdown
+                .replacingOccurrences(of: "&", with: "&amp;")
+                .replacingOccurrences(of: "<", with: "&lt;")
+                .replacingOccurrences(of: ">", with: "&gt;")
+            return "<p>\(safeContent)</p>"
+        }
     }
     
     /// Enhanced fallback markdown processing when swift-markdown fails
-    private func enhancedMarkdownProcessing(_ markdown: String) -> String {
+    private func enhancedMarkdownProcessing(_ markdown: String) throws -> String {
         print("🚀 Enhanced Markdown: Processing \(markdown.count) characters")
+        print("🚀 Enhanced Markdown: Raw content: '\(markdown)'")
+        
+        // Prevent infinite loops with empty or whitespace-only content
+        let trimmed = markdown.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            print("🚀 Enhanced Markdown: Empty content, returning minimal HTML")
+            return "<p>&nbsp;</p>"
+        }
+        
+        print("🚀 Enhanced Markdown: Trimmed content: '\(trimmed)'")
+        
+        // Prevent processing extremely long content that might cause loops
+        if markdown.count > 50000 {
+            print("🚀 Enhanced Markdown: Content too large, truncating")
+            return "<p>Content too large to render</p>"
+        }
+        
+        guard !markdown.isEmpty else {
+            return "<p>&nbsp;</p>"
+        }
+        
         let lines = markdown.components(separatedBy: .newlines)
         var result: [String] = []
         
         var inCodeBlock = false
+        var codeBlockLanguage = ""
         var inTable = false
         var tableHeaderProcessed = false
         
-        for line in lines {
+        // Process with error handling
+        for (index, line) in lines.enumerated() {
+            // Safety check to prevent infinite loops
+            if index > 10000 {
+                print("⚠️ Processing stopped at line \(index) to prevent infinite loop")
+                break
+            }
             var processedLine = line
             
             // Handle code blocks first (they have priority)
-            if line.hasPrefix("```") {
+            if line.trimmingCharacters(in: .whitespaces).hasPrefix("```") {
                 if !inCodeBlock {
                     // Start code block
                     inCodeBlock = true
-                    let language = String(line.dropFirst(3)).trimmingCharacters(in: .whitespaces)
-                    processedLine = "<pre><code class=\"language-\(language)\">"
+                    codeBlockLanguage = String(line.trimmingCharacters(in: .whitespaces).dropFirst(3)).trimmingCharacters(in: .whitespaces)
+                    processedLine = "<pre><code class=\"language-\(codeBlockLanguage)\">"
                 } else {
                     // End code block
                     inCodeBlock = false
+                    codeBlockLanguage = ""
                     processedLine = "</code></pre>"
                 }
                 result.append(processedLine)
                 continue
             }
             
-            // Don't process anything inside code blocks
+            // Don't process anything inside code blocks - preserve exactly as is
             if inCodeBlock {
-                result.append(line)
+                // HTML escape the content inside code blocks
+                let escapedLine = line
+                    .replacingOccurrences(of: "&", with: "&amp;")
+                    .replacingOccurrences(of: "<", with: "&lt;")
+                    .replacingOccurrences(of: ">", with: "&gt;")
+                result.append(escapedLine)
                 continue
             }
             
@@ -565,6 +644,12 @@ struct WebViewRenderer: NSViewRepresentable {
             result.append(processedLine)
         }
         
+        // Close any open code block
+        if inCodeBlock {
+            result.append("</code></pre>")
+            print("🚀 Enhanced Markdown: Closed incomplete code block")
+        }
+        
         // Close any open table
         if inTable {
             result.append("</tbody></table>")
@@ -573,31 +658,82 @@ struct WebViewRenderer: NSViewRepresentable {
         // Wrap consecutive list items in proper list tags
         let finalHTML = wrapListItems(result.joined(separator: "\n"))
         
-        print("🚀 Enhanced Markdown: Generated \(finalHTML.count) chars HTML with GFM support")
+        print("🚀 Enhanced Markdown: Generated \(finalHTML.count) chars HTML")
         return finalHTML
     }
     
     private func processInlineFormatting(_ text: String) -> String {
+        guard !text.isEmpty else { return text }
+        
         var result = text
         
-        // Bold (** or __)
-        result = result.replacingOccurrences(of: #"\*\*(.*?)\*\*"#, with: "<strong>$1</strong>", options: .regularExpression)
-        result = result.replacingOccurrences(of: #"__(.*?)__"#, with: "<strong>$1</strong>", options: .regularExpression)
+        // IMPORTANT: Process math expressions FIRST before other formatting
+        // This prevents other regex patterns from interfering with LaTeX
         
-        // Italic (* or _)
-        result = result.replacingOccurrences(of: #"\*(.*?)\*"#, with: "<em>$1</em>", options: .regularExpression)
-        result = result.replacingOccurrences(of: #"_(.*?)_"#, with: "<em>$1</em>", options: .regularExpression)
+        // Display math ($$...$$) - preserve exactly as is
+        // Use a placeholder to protect math during other processing
+        var mathPlaceholders: [String: String] = [:]
+        var placeholderIndex = 0
+        
+        // Handle display math $$...$$
+        let displayMathPattern = #"\$\$(.*?)\$\$"#
+        if let regex = try? NSRegularExpression(pattern: displayMathPattern, options: .dotMatchesLineSeparators) {
+            let matches = regex.matches(in: result, range: NSRange(result.startIndex..., in: result))
+            for match in matches.reversed() { // Process in reverse to maintain indices
+                if let range = Range(match.range, in: result) {
+                    let mathContent = String(result[range])
+                    let placeholder = "MATHPLACEHOLDER\(placeholderIndex)"
+                    mathPlaceholders[placeholder] = mathContent
+                    result.replaceSubrange(range, with: placeholder)
+                    placeholderIndex += 1
+                }
+            }
+        }
+        
+        // Handle inline math $...$
+        let inlineMathPattern = #"\$([^$\n]+)\$"#
+        if let regex = try? NSRegularExpression(pattern: inlineMathPattern) {
+            let matches = regex.matches(in: result, range: NSRange(result.startIndex..., in: result))
+            for match in matches.reversed() { // Process in reverse to maintain indices
+                if let range = Range(match.range, in: result) {
+                    let mathContent = String(result[range])
+                    let placeholder = "MATHPLACEHOLDER\(placeholderIndex)"
+                    mathPlaceholders[placeholder] = mathContent
+                    result.replaceSubrange(range, with: placeholder)
+                    placeholderIndex += 1
+                }
+            }
+        }
+        
+        // Now process other formatting (bold, italic, etc.)
+        // Bold (** or __)
+        result = safeRegexReplace(result, pattern: #"\*\*(.*?)\*\*"#, replacement: "<strong>$1</strong>")
+        result = safeRegexReplace(result, pattern: #"__(.*?)__"#, replacement: "<strong>$1</strong>")
+        
+        // Italic (* or _) - but avoid conflicts with math
+        result = safeRegexReplace(result, pattern: #"(?<!\$)\*([^*\$]+)\*(?!\$)"#, replacement: "<em>$1</em>")
+        result = safeRegexReplace(result, pattern: #"(?<!\$)_([^_\$]+)_(?!\$)"#, replacement: "<em>$1</em>")
         
         // Strikethrough
-        result = result.replacingOccurrences(of: #"~~(.*?)~~"#, with: "<del>$1</del>", options: .regularExpression)
+        result = safeRegexReplace(result, pattern: #"~~(.*?)~~"#, replacement: "<del>$1</del>")
         
         // Inline code
-        result = result.replacingOccurrences(of: #"`([^`]+)`"#, with: "<code>$1</code>", options: .regularExpression)
+        result = safeRegexReplace(result, pattern: #"`([^`]+)`"#, replacement: "<code>$1</code>")
         
         // Links
-        result = result.replacingOccurrences(of: #"\[(.*?)\]\((.*?)\)"#, with: "<a href=\"$2\">$1</a>", options: .regularExpression)
+        result = safeRegexReplace(result, pattern: #"\[(.*?)\]\((.*?)\)"#, replacement: "<a href=\"$2\">$1</a>")
+        
+        // Restore math expressions from placeholders
+        for (placeholder, mathContent) in mathPlaceholders {
+            result = result.replacingOccurrences(of: placeholder, with: mathContent)
+        }
         
         return result
+    }
+    
+    private func safeRegexReplace(_ text: String, pattern: String, replacement: String) -> String {
+        // Note: replacingOccurrences doesn't actually throw, but we'll keep this for safety
+        return text.replacingOccurrences(of: pattern, with: replacement, options: .regularExpression)
     }
     
     private func wrapListItems(_ html: String) -> String {
@@ -615,12 +751,16 @@ struct WebViewRenderer: NSViewRepresentable {
     // MARK: - Coordinator
     class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         weak var webView: DynamicHeightWebView?
+        private var lastHeight: CGFloat = 0
+        private var heightUpdateTimer: Timer?
+        var lastContent: String = ""
         
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             print("✅ WebView finished loading")
             
-            // Force height calculation after load
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Debounced height calculation after load
+            heightUpdateTimer?.invalidate()
+            heightUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: false) { _ in
                 webView.evaluateJavaScript("updateHeight();") { _, _ in }
             }
         }
@@ -634,14 +774,24 @@ struct WebViewRenderer: NSViewRepresentable {
                let body = message.body as? [String: Any],
                let height = body["height"] as? Double {
                 
-                print("📏 WebView content height received: \(height)")
+                let newHeight = CGFloat(height)
                 
-                DispatchQueue.main.async {
-                    if let dynamicWebView = self.webView {
-                        dynamicWebView.contentHeight = max(20, CGFloat(height))
+                // Prevent infinite loops by checking if height actually changed significantly
+                if abs(newHeight - lastHeight) > 5 {
+                    print("📏 WebView content height received: \(height) (was: \(lastHeight))")
+                    lastHeight = newHeight
+                    
+                    DispatchQueue.main.async {
+                        if let dynamicWebView = self.webView {
+                            dynamicWebView.contentHeight = max(20, newHeight)
+                        }
                     }
                 }
             }
+        }
+        
+        deinit {
+            heightUpdateTimer?.invalidate()
         }
     }
 }
