@@ -46,6 +46,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		F37090A52E5A2CE700D52929 /* Resources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		F3E7CEDF2E57587600A99E5F /* ChattrBox */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -94,6 +99,7 @@
 		F3E7CED42E57587600A99E5F = {
 			isa = PBXGroup;
 			children = (
+				F37090A52E5A2CE700D52929 /* Resources */,
 				F3E7CEDF2E57587600A99E5F /* ChattrBox */,
 				F3E7CEDE2E57587600A99E5F /* Products */,
 				F3A94C842E57A2DE00528BB8 /* Frameworks */,
@@ -126,6 +132,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				F37090A52E5A2CE700D52929 /* Resources */,
 				F3E7CEDF2E57587600A99E5F /* ChattrBox */,
 			);
 			name = ChattrBox;
