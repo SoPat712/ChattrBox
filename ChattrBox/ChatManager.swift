@@ -61,6 +61,12 @@ class ChatManager: ObservableObject {
         messages.append(userMessage)
         print("Added user message, total messages: \(messages.count)")
         
+        // Check for special commands
+        if content.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "/test" {
+            await handleTestCommand()
+            return
+        }
+        
         isLoading = true
         isStreaming = true
         
@@ -185,6 +191,137 @@ class ChatManager: ObservableObject {
     func navigateToVersion(messageId: UUID, versionIndex: Int) {
         guard let messageIndex = messages.firstIndex(where: { $0.id == messageId }) else { return }
         messages[messageIndex].setVersion(index: versionIndex)
+    }
+    
+    private func handleTestCommand() async {
+        isLoading = true
+        isStreaming = true
+        
+        // Create AI message for the test content
+        let aiMessageId = UUID()
+        let aiMessage = ChatMessage(id: aiMessageId, content: "", isUser: false)
+        messages.append(aiMessage)
+        
+        // Load test markdown content
+        let testContent = loadTestMarkdown()
+        
+        // Simulate streaming by adding content character by character
+        currentTask = Task {
+            let chunks = testContent.chunked(into: 5) // Split into chunks of 5 characters
+            
+            for chunk in chunks {
+                if Task.isCancelled {
+                    break
+                }
+                
+                await MainActor.run {
+                    if let lastIndex = self.messages.firstIndex(where: { $0.id == aiMessageId }) {
+                        let currentContent = self.messages[lastIndex].content
+                        let newContent = currentContent + chunk
+                        
+                        self.messages[lastIndex].content = newContent
+                        if self.messages[lastIndex].versions.isEmpty {
+                            self.messages[lastIndex].versions = [newContent]
+                        } else {
+                            self.messages[lastIndex].versions[0] = newContent
+                        }
+                        self.messages[lastIndex].currentVersionIndex = 0
+                    }
+                }
+                
+                // Small delay to simulate streaming
+                try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+            }
+            
+            await MainActor.run {
+                self.isLoading = false
+                self.isStreaming = false
+            }
+        }
+    }
+    
+    private func loadTestMarkdown() -> String {
+        // Try to load from the test_markdown.md file in the project directory
+        let currentDirectory = FileManager.default.currentDirectoryPath
+        let testFilePath = "\(currentDirectory)/test_markdown.md"
+        
+        if let content = try? String(contentsOfFile: testFilePath, encoding: .utf8) {
+            return content
+        }
+        
+        // Try to load from bundle
+        if let path = Bundle.main.path(forResource: "test_markdown", ofType: "md"),
+           let content = try? String(contentsOfFile: path, encoding: .utf8) {
+            return content
+        }
+        
+        // Fallback content if file is not found
+        return """
+# Math and Code Streaming Test
+
+Here's some text with math expressions and code blocks to test streaming behavior.
+
+First, let's have a simple equation: $E = mc^2$
+
+Then a more complex display equation:
+$$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
+
+And some regular text that continues after the math.
+
+Here's another inline equation $\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$ in the middle of a sentence.
+
+Now let's test code highlighting with different languages:
+
+```python
+def fibonacci(n):
+    \"\"\"Calculate the nth Fibonacci number.\"\"\"
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+# Test the function
+for i in range(10):
+    print(f"F({i}) = {fibonacci(i)}")
+```
+
+```javascript
+function quickSort(arr) {
+    if (arr.length <= 1) {
+        return arr;
+    }
+    
+    const pivot = arr[Math.floor(arr.length / 2)];
+    const left = arr.filter(x => x < pivot);
+    const middle = arr.filter(x => x === pivot);
+    const right = arr.filter(x => x > pivot);
+    
+    return [...quickSort(left), ...middle, ...quickSort(right)];
+}
+
+console.log(quickSort([3, 6, 8, 10, 1, 2, 1]));
+```
+
+```swift
+struct ContentView: View {
+    @State private var count = 0
+    
+    var body: some View {
+        VStack {
+            Text("Count: \\(count)")
+                .font(.largeTitle)
+            
+            Button("Increment") {
+                count += 1
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding()
+    }
+}
+```
+
+This should test various scenarios for streaming content with proper syntax highlighting.
+"""
     }
     
     private func loadAvailableModels() async {
@@ -530,5 +667,21 @@ enum ChatError: LocalizedError {
         case .serverError(let code):
             return "Server error: \(code)"
         }
+    }
+}
+
+// MARK: - String Extension for Chunking
+extension String {
+    func chunked(into size: Int) -> [String] {
+        var chunks: [String] = []
+        var currentIndex = startIndex
+        
+        while currentIndex < endIndex {
+            let nextIndex = index(currentIndex, offsetBy: size, limitedBy: endIndex) ?? endIndex
+            chunks.append(String(self[currentIndex..<nextIndex]))
+            currentIndex = nextIndex
+        }
+        
+        return chunks
     }
 }

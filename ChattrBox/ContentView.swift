@@ -9,7 +9,6 @@ struct ContentView: View {
     @State private var shouldAutoScroll = true // Track if we should auto-scroll
     @State private var modelSearchText = ""
     @FocusState private var isTextFieldFocused: Bool
-    @State private var cursorVisible = true
     @AppStorage("fontSize") private var fontSize = 14.0
     @AppStorage("windowOpacity") private var windowOpacity = 0.8
     @Environment(\.colorScheme) var colorScheme
@@ -52,8 +51,6 @@ struct ContentView: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .onAppear {
-            startCursorAnimation()
-            
             // Ensure text field gets focus when view appears
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 isTextFieldFocused = true
@@ -174,7 +171,8 @@ struct ContentView: View {
                             onVersionChange: !message.isUser ? { versionIndex in
                                 chatManager.navigateToVersion(messageId: message.id, versionIndex: versionIndex)
                             } : nil,
-                            fontSize: fontSize
+                            fontSize: fontSize,
+                            showCursor: !message.isUser && chatManager.isStreaming && message.id == chatManager.messages.last?.id
                         )
                             .id(message.id)
                         }
@@ -197,14 +195,44 @@ struct ContentView: View {
                                 .fill(Color.secondary.opacity(0.1))
                         )
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .id("loading")
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
             }
-            // Auto-scroll disabled - let user control scrolling freely
-            // Drag gesture removed - no more auto-scroll detection
-            // Tap gesture removed - no more auto-scroll interference
+            .onChange(of: chatManager.messages.count) { _, _ in
+                // Only scroll when a new message is added (user sends message)
+                if let lastMessage = chatManager.messages.last {
+                    withAnimation(.easeOut(duration: 0.5)) {
+                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                    }
+                }
+            }
+            .onChange(of: chatManager.isLoading) { oldValue, isLoading in
+                // Only scroll when loading starts (not when it stops)
+                if !oldValue && isLoading {
+                    if chatManager.isLoading && !chatManager.isStreaming {
+                        withAnimation(.easeOut(duration: 0.5)) {
+                            proxy.scrollTo("loading", anchor: .bottom)
+                        }
+                    } else if let lastMessage = chatManager.messages.last {
+                        withAnimation(.easeOut(duration: 0.5)) {
+                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                        }
+                    }
+                }
+            }
+            .onChange(of: chatManager.isStreaming) { oldValue, isStreaming in
+                // Only scroll when streaming starts (not during or when it stops)
+                if !oldValue && isStreaming {
+                    if let lastMessage = chatManager.messages.last {
+                        withAnimation(.easeOut(duration: 0.5)) {
+                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                        }
+                    }
+                }
+            }
         }
     }
     
@@ -462,15 +490,6 @@ struct ContentView: View {
     
 
     
-    private func startCursorAnimation() {
-        cursorVisible = true
-        
-        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-            withAnimation(.easeInOut(duration: 0.1)) {
-                    self.cursorVisible.toggle()
-            }
-        }
-    }
     
     private func extractModelSize(from modelName: String) -> Int? {
         // Look for patterns like "7B", "13B", "70B", etc.

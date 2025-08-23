@@ -12,7 +12,8 @@ struct MarkdownMathRenderer: View {
         WebViewRenderer(
             content: content,
             fontSize: fontSize,
-            colorScheme: colorScheme
+            colorScheme: colorScheme,
+            isStreaming: isStreaming
         )
         .frame(minHeight: 20)
         // Remove fixedSize to allow natural expansion
@@ -50,13 +51,15 @@ struct WebViewRenderer: NSViewRepresentable {
     let content: String
     let fontSize: Double
     let colorScheme: ColorScheme
+    let isStreaming: Bool
     
     func makeNSView(context: Context) -> DynamicHeightWebView {
         let configuration = WKWebViewConfiguration()
         
-        // Add message handler for height changes
+        // Add message handlers
         let contentController = WKUserContentController()
         contentController.add(context.coordinator, name: "heightChanged")
+        contentController.add(context.coordinator, name: "copyToClipboard")
         configuration.userContentController = contentController
         
         let webView = DynamicHeightWebView(frame: .zero, configuration: configuration)
@@ -80,8 +83,17 @@ struct WebViewRenderer: NSViewRepresentable {
     
     func updateNSView(_ webView: DynamicHeightWebView, context: Context) {
         // Check if we need to update (avoid unnecessary reloads)
-        if context.coordinator.lastContent != content {
-            print("🔄 Content changed: \(content.count) chars")
+        // For streaming content, we want to be more conservative about updates
+        let contentChanged = context.coordinator.lastContent != content
+        let significantChange = contentChanged && (
+            abs(content.count - context.coordinator.lastContent.count) > 10 || // Significant length change
+            !self.isStreaming || // Not streaming, so update immediately
+            content.hasSuffix("\n") || // Line break suggests completion
+            content.hasSuffix(".") || content.hasSuffix("!") || content.hasSuffix("?") // Sentence completion
+        )
+        
+        if significantChange {
+            print("🔄 Content changed significantly: \(content.count) chars (was \(context.coordinator.lastContent.count))")
             
             let htmlContent = generateHTML()
             print("🔄 Loading HTML content: \(content.count) chars -> \(htmlContent.count) HTML chars")
@@ -95,8 +107,8 @@ struct WebViewRenderer: NSViewRepresentable {
             }
             
             context.coordinator.lastContent = content
-        } else {
-            print("🔄 Content unchanged, skipping reload")
+        } else if contentChanged {
+            print("🔄 Content changed but not significantly, skipping reload to prevent flashing")
         }
         
         // Update coordinator reference
@@ -129,7 +141,7 @@ struct WebViewRenderer: NSViewRepresentable {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
     
     <!-- Highlight.js CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/\(colorScheme == .dark ? "github-dark" : "github").min.css" integrity="\(colorScheme == .dark ? "sha512-rO+olRTkcf304DQBxSWxln8JXCzTHlKnIdnMUwYvQa9/Jd4cQaNkItIUj6Z4nvW1dqK0SKXLbn9h4KwZTNTLzA==" : "sha512-0aPQyyeZrWj9sCA46UlmWgKOP0mUipLQ6OZXu8l4IcAmD2u31EPEy9VcIMvl7SoAaKe8bLXZhYoMaE/in+gcgA==")" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/\(colorScheme == .dark ? "github-dark" : "github").min.css" crossorigin="anonymous">
     
     <style>
         body {
@@ -172,14 +184,104 @@ struct WebViewRenderer: NSViewRepresentable {
         h6 { font-size: \(fontSize * 0.9)px; opacity: 0.8; }
         
         /* Code styling */
+        .code-block-container {
+            position: relative;
+            margin: 16px 0;
+        }
+        
+        .code-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: \(codeBlockBg);
+            border-radius: 8px 8px 0 0;
+            padding: 8px 16px;
+            font-size: \(fontSize * 0.75)px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.7;
+        }
+        
+        .code-block-language {
+            color: \(textColor);
+            font-weight: 600;
+        }
+        
+        /* Language-specific colors */
+        .language-javascript { color: #f7df1e; }
+        .language-typescript { color: #3178c6; }
+        .language-python { color: #3776ab; }
+        .language-java { color: #ed8b00; }
+        .language-swift { color: #fa7343; }
+        .language-rust { color: #ce422b; }
+        .language-go { color: #00add8; }
+        .language-cpp { color: #00599c; }
+        .language-c { color: #a8b9cc; }
+        .language-csharp { color: #239120; }
+        .language-php { color: #777bb4; }
+        .language-ruby { color: #cc342d; }
+        .language-html { color: #e34f26; }
+        .language-css { color: #1572b6; }
+        .language-scss { color: #cf649a; }
+        .language-json { color: #000000; }
+        .language-xml { color: #e37933; }
+        .language-yaml { color: #cb171e; }
+        .language-markdown { color: #083fa1; }
+        .language-bash { color: #4eaa25; }
+        .language-shell { color: #4eaa25; }
+        .language-sql { color: #336791; }
+        .language-kotlin { color: #7f52ff; }
+        .language-dart { color: #0175c2; }
+        .language-r { color: #276dc3; }
+        .language-matlab { color: #e16737; }
+        .language-scala { color: #dc322f; }
+        .language-clojure { color: #5881d8; }
+        .language-haskell { color: #5d4f85; }
+        .language-elixir { color: #6e4a7e; }
+        .language-erlang { color: #a90533; }
+        .language-lua { color: #000080; }
+        .language-perl { color: #39457e; }
+        .language-vim { color: #019733; }
+        .language-dockerfile { color: #384d54; }
+        .language-nginx { color: #009639; }
+        .language-apache { color: #d22128; }
+        .language-text { color: \(colorScheme == .dark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)"); }
+        
+        .copy-button {
+            background: transparent;
+            border: 1px solid \(colorScheme == .dark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)");
+            color: \(textColor);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: \(fontSize * 0.7)px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .copy-button:hover {
+            background: \(colorScheme == .dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)");
+            border-color: \(colorScheme == .dark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)");
+        }
+        
+        .copy-button.copied {
+            background: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+        
         pre {
             background: \(codeBlockBg);
-            border-radius: 8px;
+            border-radius: 0 0 8px 8px;
             padding: 16px;
-            margin: 16px 0;
+            margin: 0;
             overflow-x: auto;
             font-size: \(fontSize * 0.85)px;
             line-height: 1.4;
+        }
+        
+        .code-block-container:not(.has-header) pre {
+            border-radius: 8px;
         }
         
         code {
@@ -347,13 +449,47 @@ struct WebViewRenderer: NSViewRepresentable {
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"></script>
     
     <!-- Highlight.js JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js" integrity="sha512-WUU2MuRJtw1SBkeSvqNP60HdJnKPcKHHg2D34CthrRqrLzCZBhq6y8Rg+D8wj0XOgzKtMl30pAQUrCR2N6aL1w==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" crossorigin="anonymous"></script>
     
     <script>
         function initializeContent() {
+            console.log('🔧 Initializing content...');
+            
+            // Add code block headers and copy buttons
+            addCodeBlockHeaders();
+            
             // Highlight code blocks
             if (typeof hljs !== 'undefined') {
-                hljs.highlightAll();
+                console.log('✅ highlight.js is available, highlighting code blocks...');
+                try {
+                    hljs.highlightAll();
+                    
+                    // Debug: count code blocks
+                    const codeBlocks = document.querySelectorAll('pre code');
+                    console.log(`🔍 Found ${codeBlocks.length} code blocks to highlight`);
+                    codeBlocks.forEach((block, index) => {
+                        console.log(`📝 Code block ${index}: class="${block.className}", language="${block.className.replace('language-', '')}"`);
+                        
+                        // Check if highlighting was applied
+                        if (block.classList.contains('hljs')) {
+                            console.log(`✅ Code block ${index} was highlighted successfully`);
+                        } else {
+                            console.log(`⚠️ Code block ${index} was not highlighted`);
+                        }
+                    });
+                } catch (error) {
+                    console.error('❌ Error highlighting code blocks:', error);
+                }
+            } else {
+                console.error('❌ highlight.js is not available!');
+                
+                // Fallback: add basic styling to code blocks
+                const codeBlocks = document.querySelectorAll('pre code');
+                codeBlocks.forEach(block => {
+                    block.style.display = 'block';
+                    block.style.padding = '0.5em';
+                    console.log('📝 Applied fallback styling to code block');
+                });
             }
             
             // Render math with KaTeX
@@ -392,21 +528,28 @@ struct WebViewRenderer: NSViewRepresentable {
         function updateHeight() {
             // Force layout calculation
             document.body.style.height = 'auto';
+            document.documentElement.style.height = 'auto';
             
-            const height = Math.max(
-                document.body.scrollHeight,
-                document.body.offsetHeight,
-                document.documentElement.scrollHeight,
-                document.documentElement.offsetHeight
-            );
-            
-            // Set explicit height to prevent vertical scrolling
-            document.body.style.height = height + 'px';
-            document.documentElement.style.height = height + 'px';
-            
-            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.heightChanged) {
-                window.webkit.messageHandlers.heightChanged.postMessage({ height: height });
-            }
+            // Wait for layout to complete
+            requestAnimationFrame(() => {
+                const height = Math.max(
+                    document.body.scrollHeight,
+                    document.body.offsetHeight,
+                    document.documentElement.scrollHeight,
+                    document.documentElement.offsetHeight,
+                    20 // Minimum height
+                );
+                
+                console.log('📏 Calculated height:', height);
+                
+                // Set explicit height to prevent vertical scrolling
+                document.body.style.height = height + 'px';
+                document.documentElement.style.height = height + 'px';
+                
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.heightChanged) {
+                    window.webkit.messageHandlers.heightChanged.postMessage({ height: height });
+                }
+            });
         }
         
         // Initialize when all resources are loaded
@@ -419,10 +562,205 @@ struct WebViewRenderer: NSViewRepresentable {
             setTimeout(initializeContent, 100);
         }
         
+        // Retry mechanism for highlight.js
+        let retryCount = 0;
+        const maxRetries = 5;
+        
+        function retryHighlighting() {
+            if (typeof hljs === 'undefined' && retryCount < maxRetries) {
+                retryCount++;
+                console.log(`🔄 Retrying highlight.js initialization (attempt ${retryCount}/${maxRetries})`);
+                setTimeout(function() {
+                    if (typeof hljs !== 'undefined') {
+                        console.log('✅ highlight.js loaded on retry, highlighting now...');
+                        hljs.highlightAll();
+                    } else {
+                        retryHighlighting();
+                    }
+                }, 200 * retryCount); // Exponential backoff
+            }
+        }
+        
+        // Start retry if hljs is not available initially
+        setTimeout(function() {
+            if (typeof hljs === 'undefined') {
+                retryHighlighting();
+            }
+        }, 500);
+        
+        function addCodeBlockHeaders() {
+            const codeBlocks = document.querySelectorAll('pre code');
+            codeBlocks.forEach((codeElement, index) => {
+                const preElement = codeElement.parentElement;
+                
+                // Skip if already wrapped
+                if (preElement.parentElement.classList.contains('code-block-container')) {
+                    return;
+                }
+                
+                // Extract language from class
+                let language = 'text';
+                const classNames = codeElement.className.split(' ');
+                for (const className of classNames) {
+                    if (className.startsWith('language-')) {
+                        language = className.replace('language-', '');
+                        break;
+                    }
+                }
+                
+                // Create container
+                const container = document.createElement('div');
+                container.className = 'code-block-container has-header';
+                
+                // Create header
+                const header = document.createElement('div');
+                header.className = 'code-block-header';
+                
+                // Language label with color
+                const languageLabel = document.createElement('span');
+                languageLabel.className = `code-block-language language-${language}`;
+                languageLabel.textContent = language.toUpperCase();
+                
+                // Copy button
+                const copyButton = document.createElement('button');
+                copyButton.className = 'copy-button';
+                copyButton.textContent = 'COPY';
+                copyButton.onclick = function() {
+                    copyCodeToClipboard(codeElement, copyButton);
+                };
+                
+                header.appendChild(languageLabel);
+                header.appendChild(copyButton);
+                
+                // Wrap the pre element
+                preElement.parentNode.insertBefore(container, preElement);
+                container.appendChild(header);
+                container.appendChild(preElement);
+            });
+        }
+        
+        function copyCodeToClipboard(codeElement, button) {
+            const text = codeElement.textContent || codeElement.innerText;
+            console.log('📋 Attempting to copy text:', text.substring(0, 50) + '...');
+            
+            // Store button reference for callbacks
+            window.currentCopyButton = button;
+            
+            // Use native clipboard via Swift
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.copyToClipboard) {
+                window.webkit.messageHandlers.copyToClipboard.postMessage(text);
+            } else {
+                // Fallback for testing
+                fallbackCopyToClipboard(text, button);
+            }
+        }
+        
+        // Callback functions for Swift to call
+        window.copySuccess = function() {
+            if (window.currentCopyButton) {
+                showCopySuccess(window.currentCopyButton);
+                window.currentCopyButton = null;
+            }
+        };
+        
+        window.copyFailed = function() {
+            if (window.currentCopyButton) {
+                const button = window.currentCopyButton;
+                button.textContent = 'FAILED';
+                button.style.background = '#dc3545';
+                button.style.borderColor = '#dc3545';
+                button.style.color = 'white';
+                
+                setTimeout(() => {
+                    button.textContent = 'COPY';
+                    button.classList.remove('copied');
+                    button.style.background = '';
+                    button.style.borderColor = '';
+                    button.style.color = '';
+                }, 2000);
+                
+                window.currentCopyButton = null;
+            }
+        };
+        
+        function fallbackCopyToClipboard(text, button) {
+            console.log('📋 Using fallback copy method');
+            
+            // Create a temporary element to hold the text
+            const tempElement = document.createElement('div');
+            tempElement.style.position = 'absolute';
+            tempElement.style.left = '-9999px';
+            tempElement.style.top = '0';
+            tempElement.style.whiteSpace = 'pre';
+            tempElement.textContent = text;
+            
+            document.body.appendChild(tempElement);
+            
+            try {
+                // Select the text
+                const range = document.createRange();
+                range.selectNodeContents(tempElement);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                
+                // Try to copy
+                const successful = document.execCommand('copy');
+                console.log('📋 Fallback copy result:', successful);
+                
+                if (successful) {
+                    showCopySuccess(button);
+                } else {
+                    throw new Error('Copy command failed');
+                }
+                
+                // Clear selection
+                selection.removeAllRanges();
+                
+            } catch (err) {
+                console.error('❌ Fallback copy failed:', err);
+                button.textContent = 'FAILED';
+                button.style.background = '#dc3545';
+                button.style.borderColor = '#dc3545';
+                button.style.color = 'white';
+                
+                setTimeout(() => {
+                    button.textContent = 'COPY';
+                    button.classList.remove('copied');
+                    button.style.background = '';
+                    button.style.borderColor = '';
+                    button.style.color = '';
+                }, 2000);
+            }
+            
+            document.body.removeChild(tempElement);
+        }
+        
+        function showCopySuccess(button) {
+            button.textContent = 'COPIED';
+            button.classList.add('copied');
+            setTimeout(() => {
+                button.textContent = 'COPY';
+                button.classList.remove('copied');
+            }, 2000);
+        }
+        
         // Watch for content changes (for streaming updates)
-        const observer = new MutationObserver(function() {
-            setTimeout(function() {
-                if (typeof hljs !== 'undefined') hljs.highlightAll();
+        let updateTimeout;
+        const observer = new MutationObserver(function(mutations) {
+            // Debounce updates to prevent excessive re-rendering
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(function() {
+                console.log('🔄 Content changed, re-highlighting...');
+                
+                // Re-add code block headers for new content
+                addCodeBlockHeaders();
+                
+                if (typeof hljs !== 'undefined') {
+                    hljs.highlightAll();
+                    const codeBlocks = document.querySelectorAll('pre code');
+                    console.log(`🔍 Re-highlighted ${codeBlocks.length} code blocks`);
+                }
                 if (typeof renderMathInElement !== 'undefined') {
                     renderMathInElement(document.body, {
                         delimiters: [
@@ -436,7 +774,7 @@ struct WebViewRenderer: NSViewRepresentable {
                 }
                 wrapTablesForScrolling();
                 updateHeight();
-            }, 50);
+            }, 100); // Increased debounce time for stability
         });
         
         observer.observe(document.body, {
@@ -520,9 +858,11 @@ struct WebViewRenderer: NSViewRepresentable {
                     inCodeBlock = true
                     codeBlockLanguage = String(line.trimmingCharacters(in: .whitespaces).dropFirst(3)).trimmingCharacters(in: .whitespaces)
                     processedLine = "<pre><code class=\"language-\(codeBlockLanguage)\">"
+                    print("🔧 Starting code block with language: '\(codeBlockLanguage)'")
                 } else {
                     // End code block
                     inCodeBlock = false
+                    print("🔧 Ending code block")
                     codeBlockLanguage = ""
                     processedLine = "</code></pre>"
                 }
@@ -784,6 +1124,24 @@ struct WebViewRenderer: NSViewRepresentable {
                     DispatchQueue.main.async {
                         if let dynamicWebView = self.webView {
                             dynamicWebView.contentHeight = max(20, newHeight)
+                        }
+                    }
+                }
+            } else if message.name == "copyToClipboard",
+                      let text = message.body as? String {
+                
+                print("📋 Copying text to clipboard: \(text.prefix(50))...")
+                
+                DispatchQueue.main.async {
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.clearContents()
+                    let success = pasteboard.setString(text, forType: .string)
+                    
+                    // Send result back to JavaScript
+                    let script = success ? "window.copySuccess && window.copySuccess();" : "window.copyFailed && window.copyFailed();"
+                    self.webView?.evaluateJavaScript(script) { _, error in
+                        if let error = error {
+                            print("❌ Error executing copy callback: \(error)")
                         }
                     }
                 }

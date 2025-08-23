@@ -33,17 +33,15 @@ struct SimpleChatBubble: View {
     let onVersionChange: ((Int) -> Void)?
     let fontSize: Double
     let showCursor: Bool
-    let cursorVisible: Bool
     @State private var showButtons = false
     @Environment(\.colorScheme) var colorScheme
     
-    init(message: ChatMessage, onRegenerate: (() -> Void)? = nil, onVersionChange: ((Int) -> Void)? = nil, fontSize: Double = 14.0, showCursor: Bool = false, cursorVisible: Bool = true) {
+    init(message: ChatMessage, onRegenerate: (() -> Void)? = nil, onVersionChange: ((Int) -> Void)? = nil, fontSize: Double = 14.0, showCursor: Bool = false) {
         self.message = message
         self.onRegenerate = onRegenerate
         self.onVersionChange = onVersionChange
         self.fontSize = fontSize
         self.showCursor = showCursor
-        self.cursorVisible = cursorVisible
     }
     
     private var backgroundColor: Color {
@@ -99,8 +97,7 @@ struct SimpleChatBubble: View {
                                 StreamingContentView(
                                     content: message.displayContent,
                                     fontSize: fontSize,
-                                    textColor: textColor,
-                                    cursorVisible: cursorVisible
+                                    textColor: textColor
                                 )
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 12)
@@ -274,14 +271,13 @@ struct StreamingContentView: View {
     let content: String
     let fontSize: Double
     let textColor: Color
-    let cursorVisible: Bool
     
     @State private var stableContent: String = ""
     @State private var streamingContent: String = ""
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Rendered stable content (everything up to the last complete sentence/paragraph)
+        VStack(alignment: .leading, spacing: 0) {
+            // Rendered stable content (all complete lines above the current streaming line)
             if !stableContent.isEmpty {
                 MarkdownMathRenderer(
                     content: stableContent,
@@ -291,24 +287,13 @@ struct StreamingContentView: View {
                 .allowsHitTesting(false)
             }
             
-            // Raw streaming content (the incomplete part being typed)
+            // Raw streaming content (the current incomplete line being typed)
             if !streamingContent.isEmpty {
-                HStack(alignment: .top, spacing: 0) {
-                    Text(streamingContent)
-                        .font(.system(size: fontSize))
-                        .foregroundColor(textColor)
-                        .textSelection(.enabled)
-                        .multilineTextAlignment(.leading)
-                    
-                    // Cursor after streaming content
-                    Rectangle()
-                        .fill(textColor)
-                        .frame(width: 2, height: fontSize)
-                        .opacity(cursorVisible ? 1.0 : 0.0)
-                        .allowsHitTesting(false)
-                        .padding(.leading, 4)
-                        .padding(.top, 2)
-                }
+                Text(streamingContent)
+                    .font(.system(size: fontSize))
+                    .foregroundColor(textColor)
+                    .textSelection(.enabled)
+                    .multilineTextAlignment(.leading)
             }
         }
         .onChange(of: content) { _, newValue in
@@ -320,46 +305,235 @@ struct StreamingContentView: View {
     }
     
     private func updateContentSplit(_ fullContent: String) {
-        // Split content into stable (complete) and streaming (incomplete) parts
+        // Use a more sophisticated approach to split content that's math-aware
+        let (stable, streaming) = splitContentForStreaming(fullContent)
+        stableContent = stable
+        streamingContent = streaming
+    }
+    
+    private func splitContentForStreaming(_ fullContent: String) -> (stable: String, streaming: String) {
+        // If content is very short, keep it all as streaming
+        if fullContent.count < 50 {
+            return ("", fullContent)
+        }
+        
         let lines = fullContent.components(separatedBy: .newlines)
         
-        // Find the last complete paragraph/sentence
+        // If only one line, check if we can split by sentences
+        if lines.count <= 1 {
+            return splitBySentences(fullContent)
+        }
+        
+        // Multi-line content: find the best split point
         var stableLines: [String] = []
         var streamingLines: [String] = []
         
         for (index, line) in lines.enumerated() {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            
-            // Consider a line "complete" if it ends with punctuation or is followed by an empty line
-            let isComplete = trimmed.hasSuffix(".") || trimmed.hasSuffix("!") || trimmed.hasSuffix("?") || 
-                            trimmed.hasSuffix(":") || trimmed.isEmpty ||
-                            (index < lines.count - 1 && lines[index + 1].trimmingCharacters(in: .whitespaces).isEmpty)
-            
-            if isComplete && index < lines.count - 2 {
-                // This line is complete and not one of the last two lines
+            if index == lines.count - 1 {
+                // Always keep the last line as streaming unless it's clearly complete
+                if isLineDefinitelyComplete(line) && lines.count > 2 {
+                    stableLines.append(line)
+                } else {
+                    streamingLines.append(line)
+                }
+            } else if isLineSafeToRender(line, nextLine: index < lines.count - 1 ? lines[index + 1] : nil) {
+                // Check if this line is complete and safe to render
                 stableLines.append(line)
             } else {
-                // This line and everything after is still streaming
+                // This line is incomplete or unsafe, everything from here is streaming
                 streamingLines = Array(lines[index...])
                 break
             }
         }
         
-        stableContent = stableLines.joined(separator: "\n")
-        streamingContent = streamingLines.joined(separator: "\n")
+        let stable = stableLines.joined(separator: "\n")
+        let streaming = streamingLines.joined(separator: "\n")
         
-        // If everything looks incomplete, show last few complete sentences as stable
-        if stableContent.isEmpty && fullContent.count > 100 {
-            let sentences = fullContent.components(separatedBy: CharacterSet(charactersIn: ".!?"))
-            if sentences.count > 2 {
-                let stableSentences = sentences.dropLast(2)
-                stableContent = stableSentences.joined(separator: ". ") + "."
-                streamingContent = sentences.suffix(2).joined(separator: ". ")
-            } else {
-                streamingContent = fullContent
-            }
-        } else if stableContent.isEmpty {
-            streamingContent = fullContent
+        // If we have no stable content but content is long, try sentence-based splitting
+        if stable.isEmpty && fullContent.count > 150 {
+            return splitBySentences(fullContent)
         }
+        
+        return (stable, streaming)
+    }
+    
+    private func splitBySentences(_ content: String) -> (stable: String, streaming: String) {
+        // Split by sentence-ending punctuation, but be careful with math
+        let sentences = content.components(separatedBy: CharacterSet(charactersIn: ".!?"))
+        
+        if sentences.count <= 2 {
+            return ("", content)
+        }
+        
+        // Keep all but the last 1-2 sentences as stable
+        let stableSentenceCount = max(0, sentences.count - 2)
+        let stableSentences = Array(sentences.prefix(stableSentenceCount))
+        let streamingSentences = Array(sentences.suffix(sentences.count - stableSentenceCount))
+        
+        var stable = stableSentences.joined(separator: ". ")
+        if !stable.isEmpty && !stable.hasSuffix(".") {
+            stable += "."
+        }
+        
+        let streaming = streamingSentences.joined(separator: ". ")
+        
+        // Make sure we don't split in the middle of math expressions
+        if containsIncompleteMath(stable) || containsIncompleteMath(streaming) {
+            return ("", content)
+        }
+        
+        return (stable, streaming)
+    }
+    
+    private func isLineSafeToRender(_ line: String, nextLine: String?) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        
+        // Empty lines are always safe
+        if trimmed.isEmpty {
+            return true
+        }
+        
+        // Check for incomplete math expressions
+        if containsIncompleteMath(line) {
+            return false
+        }
+        
+        // Check for markdown structures that might be incomplete
+        if isIncompleteMarkdownStructure(line, nextLine: nextLine) {
+            return false
+        }
+        
+        // Lines that end with clear punctuation are usually safe
+        if trimmed.hasSuffix(".") || trimmed.hasSuffix("!") || trimmed.hasSuffix("?") ||
+           trimmed.hasSuffix(":") || trimmed.hasSuffix(";") {
+            return true
+        }
+        
+        // Complete markdown elements are safe
+        if trimmed.hasPrefix("#") || // Headers
+           trimmed.hasPrefix("-") || trimmed.hasPrefix("*") || // Lists
+           trimmed.hasPrefix(">") || // Blockquotes
+           trimmed.hasPrefix("```") { // Code blocks
+            return true
+        }
+        
+        // If the line is reasonably long and doesn't look like it's mid-sentence, it's probably safe
+        if trimmed.count > 30 && !trimmed.hasSuffix(",") && !trimmed.hasSuffix("and") && !trimmed.hasSuffix("or") {
+            return true
+        }
+        
+        return false
+    }
+    
+    private func isLineDefinitelyComplete(_ line: String) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        
+        // Empty lines are complete
+        if trimmed.isEmpty {
+            return true
+        }
+        
+        // Lines ending with clear punctuation
+        if trimmed.hasSuffix(".") || trimmed.hasSuffix("!") || trimmed.hasSuffix("?") {
+            return true
+        }
+        
+        // Complete markdown structures
+        if trimmed.hasPrefix("#") || trimmed.hasPrefix("```") {
+            return true
+        }
+        
+        // Complete math expressions
+        if isCompleteMathExpression(trimmed) {
+            return true
+        }
+        
+        return false
+    }
+    
+    private func isIncompleteMarkdownStructure(_ line: String, nextLine: String?) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        
+        // Check for incomplete code blocks
+        if trimmed.hasPrefix("```") && !trimmed.hasSuffix("```") {
+            return true
+        }
+        
+        // Check for incomplete tables (if next line might be a table separator)
+        if trimmed.contains("|") && nextLine?.contains("---") == true {
+            return true
+        }
+        
+        return false
+    }
+    
+    private func containsIncompleteMath(_ text: String) -> Bool {
+        // Count dollar signs to detect incomplete math expressions
+        let dollarCount = text.components(separatedBy: "$").count - 1
+        
+        // Odd number of dollar signs means incomplete math
+        if dollarCount % 2 != 0 {
+            return true
+        }
+        
+        // Check for incomplete display math
+        let doubleDollarCount = text.components(separatedBy: "$$").count - 1
+        if doubleDollarCount % 2 != 0 {
+            return true
+        }
+        
+        // Check for incomplete LaTeX commands
+        if text.contains("\\") && !isCompleteLaTeXCommand(text) {
+            return true
+        }
+        
+        return false
+    }
+    
+    private func isCompleteLaTeXCommand(_ text: String) -> Bool {
+        // Simple check for common LaTeX commands that might be incomplete
+        let incompletePatterns = ["\\frac{", "\\sqrt{", "\\sum_{", "\\int_{", "\\lim_{"]
+        
+        for pattern in incompletePatterns {
+            if text.contains(pattern) {
+                // Check if the command is properly closed
+                let openBraces = text.components(separatedBy: "{").count - 1
+                let closeBraces = text.components(separatedBy: "}").count - 1
+                if openBraces > closeBraces {
+                    return false
+                }
+            }
+        }
+        
+        return true
+    }
+    
+    private func isCompleteMathExpression(_ line: String) -> Bool {
+        // Check if line contains complete math expressions
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        
+        // Display math: $$...$$
+        if trimmed.hasPrefix("$$") && trimmed.hasSuffix("$$") && trimmed.count > 4 {
+            return true
+        }
+        
+        // Inline math: $...$
+        if trimmed.hasPrefix("$") && trimmed.hasSuffix("$") && trimmed.count > 2 && !trimmed.hasPrefix("$$") {
+            return true
+        }
+        
+        // LaTeX environments: \begin{...} ... \end{...}
+        if trimmed.hasPrefix("\\begin{") && trimmed.contains("\\end{") {
+            return true
+        }
+        
+        // Check if the line contains only complete math expressions
+        let dollarCount = trimmed.components(separatedBy: "$").count - 1
+        if dollarCount >= 2 && dollarCount % 2 == 0 {
+            // Even number of dollar signs suggests complete math expressions
+            return true
+        }
+        
+        return false
     }
 }
