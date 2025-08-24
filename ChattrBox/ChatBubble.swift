@@ -109,7 +109,6 @@ struct SimpleChatBubble: View {
                                         fontSize: fontSize,
                                         isStreaming: false
                                     )
-                                    .allowsHitTesting(false)
                                 }
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 12)
