@@ -7,7 +7,25 @@
 		<key>ChattrBox.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>1</integer>
+			<integer>0</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>F3E7CEDC2E57587600A99E5F</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>F3E7CEEA2E57587800A99E5F</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>F3E7CEF42E57587800A99E5F</key>
+		<dict>
+			<key>primary</key>
+			<true/>
 		</dict>
 	</dict>
 </dict>
